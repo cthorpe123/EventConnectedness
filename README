@@ -1,0 +1,17 @@
+
+Getting set up:
+
+Make sure you have root gcc and root installed
+
+Run the included setup script which does the following:
+
+export CONNECTEDNESS_BASE=$PWD
+export ROOT_INCLUDE_PATH=$ROOT_INCLUDE_PATH:$PWD/Alg
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/lib
+
+Compile the algs/objects:
+
+g++ `${ROOTSYS}/bin/root-config --cflags` -c -fPIC $CONNECTEDNESS_BASE/Alg/ClusterBuilder.cxx  -o $CONNECTEDNESS_BASE/lib/ClusterBuilder.o
+g++ -shared `${ROOTSYS}/bin/root-config --libs` $CONNECTEDNESS_BASE/lib/ClusterBuilder.o -o $CONNECTEDNESS_BASE/lib/libClusterBuilder.so
+
+
