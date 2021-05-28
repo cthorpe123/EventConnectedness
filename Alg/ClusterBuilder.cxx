@@ -26,7 +26,7 @@ ClusterBuilder::~ClusterBuilder(){
 
    delete h_Raw;
    delete h_Binary;
-   delete c;
+   if(DrawEverything) delete c;
 
 }
 
@@ -37,9 +37,9 @@ void ClusterBuilder::LoadDeadWireMaps(std::string dir){
 
    std::cout << "Getting dead channel lists" << std::endl;
 
-   std::ifstream input_DeadChannels_Plane0(dir + "/Plane0.txt");
-   std::ifstream input_DeadChannels_Plane1(dir + "/Plane1.txt");
-   std::ifstream input_DeadChannels_Plane2(dir + "/Plane2.txt");
+   std::ifstream input_DeadChannels_Plane0(dir + "Plane0.txt");
+   std::ifstream input_DeadChannels_Plane1(dir + "Plane1.txt");
+   std::ifstream input_DeadChannels_Plane2(dir + "Plane2.txt");
 
    int dead;
 
@@ -59,6 +59,32 @@ void ClusterBuilder::LoadDeadWireMaps(std::string dir){
 void ClusterBuilder::SetThreshold(double threshold){
 
    Threshold = threshold;
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ClusterBuilder::SetOffsets(int x_offset,int y_offset){
+
+XOffset = x_offset;
+YOffset = y_offset;
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ClusterBuilder::SetSeachArea(int x_max,int y_max){
+
+MaxSearchX = x_max;
+MaxSearchY = y_max;
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ClusterBuilder::Reset(){
+
+   Clusters.clear();
 
 }
 
@@ -107,19 +133,25 @@ void ClusterBuilder::ReadData(std::vector<int> channel,std::vector<int> tick,std
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int ClusterBuilder::MakeCluster(int seed_channel,int seed_tick,int ID){
+std::pair<int,int> ClusterBuilder::MakeCluster(int seed_channel,int seed_tick,int ID){
 
    //std::cout << "Building cluster " << ID << std::endl;
 
    // Get seed location in bin space
-   int seed_channel_b = h_Raw->GetXaxis()->FindBin(seed_channel-x_offset);
-   int seed_tick_b = h_Raw->GetYaxis()->FindBin(seed_tick-y_offset);
+   int seed_channel_b = h_Raw->GetXaxis()->FindBin(seed_channel-XOffset);
+   int seed_tick_b = h_Raw->GetYaxis()->FindBin(seed_tick-YOffset);
 
    // Check seed bin is occupied
    if(h_Binary->GetBinContent(seed_channel_b,seed_tick_b) < 1){
-      //std::cout << "Seed of cluster " << ID << " is in empty bin, return -1" << std::endl;
-      return -1;
+      std::pair<int,int> bins = FindNearestOccupiedBin(h_Binary,seed_channel_b,seed_tick_b);
+      if(bins.first == -1 && bins.second == -1) return std::make_pair(-1,-1);
+      else {
+         seed_channel_b = bins.first;
+         seed_tick_b = bins.second;
+      }
    }
+
+  
 
    // Check if this is a bin in the list of clusters already produced, if it is
    // return the ID of that cluster
@@ -131,7 +163,7 @@ int ClusterBuilder::MakeCluster(int seed_channel,int seed_tick,int ID){
       for(size_t i_b=0;i_b<thisCluster.bins_x.size();i_b++){
          if(seed_channel_b == thisCluster.bins_x.at(i_b) && seed_tick_b == thisCluster.bins_y.at(i_b)){ 
             //std::cout << "Seed already belongs to cluster " << thisCluster.ID << std::endl;
-            return thisCluster.ID;
+            return std::make_pair(thisCluster.ID,thisCluster.bins_x.size());
          }
       }
 
@@ -154,7 +186,7 @@ int ClusterBuilder::MakeCluster(int seed_channel,int seed_tick,int ID){
 
    // for debugging only
    //h_tmp.Draw("colz");
-   //c->Print("tmp.png");   
+   //c->Print("tmp.pdf");   
 
    int neighbour_x;
    int neighbour_y;
@@ -278,11 +310,41 @@ int ClusterBuilder::MakeCluster(int seed_channel,int seed_tick,int ID){
 
    Clusters.push_back(C);
 
-   return ID;
+   return std::make_pair(ID,C.bins_x.size());
 
    // for debugging only
    // h_tmp.Draw("colz");
-   // c->Print("tmp.png");   
+   // c->Print("tmp.pdf");   
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+std::pair<int,int> ClusterBuilder::FindNearestOccupiedBin(TH2D *hist,int x, int y){
+
+   //std::cout << "Checking bins around " << x << "  " << y << std::endl;
+
+   std::pair<int,int> NearestBin = { -1, -1};
+
+   // Search neighbouring bins until you find an occupied one, within the ranges set by max_x and max_y
+
+   for(int i_x=1;i_x<MaxSearchX+1;i_x++){
+      for(int i_y=1;i_y<MaxSearchY+1;i_y++){
+ 
+         if(hist->GetBinContent(x+i_x,y) > 0) { NearestBin = {x+i_x,y}; return NearestBin; }
+         if(hist->GetBinContent(x-i_x,y) > 0) { NearestBin = {x-i_x,y}; return NearestBin; }
+         if(hist->GetBinContent(x,y+i_y) > 0) { NearestBin = {x,y+i_y}; return NearestBin; }
+         if(hist->GetBinContent(x,y-i_y) > 0) { NearestBin = {x,y-i_y}; return NearestBin; }
+         if(hist->GetBinContent(x+i_x,y+i_y) > 0) { NearestBin = {x+i_x,y+i_y}; return NearestBin; }
+         if(hist->GetBinContent(x-i_x,y+i_y) > 0) { NearestBin = {x-i_x,y+i_y}; return NearestBin; }
+         if(hist->GetBinContent(x+i_x,y-i_y) > 0) { NearestBin = {x+i_x,y-i_y}; return NearestBin; }
+         if(hist->GetBinContent(x-i_x,y-i_y) > 0) { NearestBin = {x-i_x,y-i_y}; return NearestBin; }
+             
+      }
+   }
+
+// Return -1,-1 if no nearby bins are occupied
+return NearestBin;
 
 }
 
@@ -290,7 +352,7 @@ int ClusterBuilder::MakeCluster(int seed_channel,int seed_tick,int ID){
 
 std::vector<Cluster> ClusterBuilder::GetClusters(){
 
-return Clusters;
+   return Clusters;
 
 }
 
@@ -298,45 +360,47 @@ return Clusters;
 
 bool ClusterBuilder::SeedDeadWireCheck(std::vector<int> seeds_channel,std::vector<int> seeds_tick,int plane){
 
-//std::cout << "Checking if seeds are separated by dead channels" << std::endl;
+   //std::cout << "Checking if seeds are separated by dead channels" << std::endl;
 
-if(seeds_channel.size() != seeds_tick.size()){
+   if(seeds_channel.size() != seeds_tick.size()){
       std::cout << "Input channel/tick/signal vectors of different sizes! Exiting" << std::endl;
       return true;
-}
+   }
 
-// if there is zero or 1 seed, this check is meaningless
-if(seeds_channel.size() < 2) return false;
+   // if there is zero or 1 seed, this check is meaningless
+   if(seeds_channel.size() < 2) return false;
 
-// find lowest/highest channel seeds
-int min_ch=seeds_channel.at(0)-x_offset;
-int max_ch=seeds_channel.at(0)-x_offset;
+   // find lowest/highest channel seeds
+   int min_ch=seeds_channel.at(0)-XOffset;
+   int max_ch=seeds_channel.at(0)-XOffset;
 
-for(size_t i_s=1;i_s<seeds_channel.size();i_s++){
+   for(size_t i_s=1;i_s<seeds_channel.size();i_s++){
 
-if(seeds_channel.at(i_s)-x_offset < min_ch) min_ch = seeds_channel.at(i_s)-x_offset;
-if(seeds_channel.at(i_s)-x_offset > max_ch) max_ch = seeds_channel.at(i_s)-x_offset;
+      if(seeds_channel.at(i_s)-XOffset < min_ch) min_ch = seeds_channel.at(i_s)-XOffset;
+      if(seeds_channel.at(i_s)-XOffset > max_ch) max_ch = seeds_channel.at(i_s)-XOffset;
 
-}
+   }
 
-int ch=min_ch;
+   int ch=min_ch;
 
-while(ch <= max_ch){
+   while(ch <= max_ch){
 
-   // Search the list of dead channels
-   if(plane == 0 && (std::find(DeadChannels_Plane0.begin(),DeadChannels_Plane0.end(),ch) != DeadChannels_Plane0.end())){ return true; }
-   if(plane == 1 && (std::find(DeadChannels_Plane1.begin(),DeadChannels_Plane1.end(),ch) != DeadChannels_Plane1.end())){ return true; }
-   if(plane == 2 && (std::find(DeadChannels_Plane2.begin(),DeadChannels_Plane2.end(),ch) != DeadChannels_Plane2.end())){ return true; }
+      // Search the list of dead channels
+      if(plane == 0 && (std::find(DeadChannels_Plane0.begin(),DeadChannels_Plane0.end(),ch) != DeadChannels_Plane0.end())){ return true; }
+      if(plane == 1 && (std::find(DeadChannels_Plane1.begin(),DeadChannels_Plane1.end(),ch) != DeadChannels_Plane1.end())){ return true; }
+      if(plane == 2 && (std::find(DeadChannels_Plane2.begin(),DeadChannels_Plane2.end(),ch) != DeadChannels_Plane2.end())){ return true; }
 
-   ch++;
-}
-         
+      ch++;
+   }
+
 
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ClusterBuilder::DrawRaw(std::string rse){
+
+   if(!DrawEverything) return;
 
    std::string cmd = "mkdir -p Plots";  
    system(cmd.c_str()); 
@@ -347,9 +411,9 @@ void ClusterBuilder::DrawRaw(std::string rse){
    h_Raw->SetStats(0);
    h_Raw->SetTitle(rse.c_str());
    h_Raw->Draw("colz");
-   c->Print("Raw.png");
+   c->Print("Raw.pdf");
 
-   cmd = "mv Raw.png Plots/" + rse + "/";
+   cmd = "mv Raw.pdf Plots/" + rse + "/";
    system(cmd.c_str());
 
    c->Clear();
@@ -359,6 +423,8 @@ void ClusterBuilder::DrawRaw(std::string rse){
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ClusterBuilder::DrawBinary(std::string rse){
+
+   if(!DrawEverything) return;
 
    std::string cmd = "mkdir -p Plots";  
    system(cmd.c_str()); 
@@ -371,11 +437,11 @@ void ClusterBuilder::DrawBinary(std::string rse){
    h_Binary->SetStats(0);
    h_Binary->SetTitle(rse.c_str());
    h_Binary->Draw("colz");
-   c->Print("Binary.png");
+   c->Print("Binary.pdf");
 
    c->Clear();
 
-   cmd = "mv Binary.png Plots/" + rse + "/";
+   cmd = "mv Binary.pdf Plots/" + rse + "/";
    system(cmd.c_str());
 
    gStyle->SetPalette();
@@ -384,37 +450,127 @@ void ClusterBuilder::DrawBinary(std::string rse){
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ClusterBuilder::DrawClustered(std::string rse){
+void ClusterBuilder::DrawClustered(std::string rse,int plane){
+
+   if(!DrawEverything) return;
+
+   // Draw on dead wires
+   if(plane != -1) DeadWireFill(plane);
 
    std::string cmd = "mkdir -p Plots";  
    system(cmd.c_str()); 
    cmd = "mkdir -p Plots/" + rse + "/";
    system(cmd.c_str());
 
+   // Set color palette
+   int nclusters = Clusters.size();
+
+   // hacky way to force color transitions to happen at the right bin height
+   h_Binary->SetBinContent(1,1,-1.5);
+   h_Binary->SetBinContent(1,2,nclusters+1.5);
+     
+   if(nclusters == 0){
+   Int_t colors[] = {1,0,2};
+   gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+   }
+   else if(nclusters == 1){
+   Int_t colors[] = {1,0,2,3};
+   gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+   }
+   else if(nclusters == 2){
+   Int_t colors[] = {1,0,2,3,4};
+   gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+   }
+   else if(nclusters == 3){
+   Int_t colors[] = {1,0,2,3,4,6};
+   gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+   }
+   else if(nclusters == 4){
+   Int_t colors[] = {1,0,2,3,4,6,7};
+   gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+   }
+   else if(nclusters == 5){
+   Int_t colors[] = {1,0,2,3,4,6,7,40};
+   gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+   }
+   else{
+   Int_t colors[] = {1,0,2,3,4,6,7,40,46};
+   gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+   }
+
    // set bin heights equal to cluster IDs
    for(size_t i_cl=0;i_cl<Clusters.size();i_cl++){
 
       for(size_t i_b=0;i_b<Clusters.at(i_cl).bins_x.size();i_b++){
 
-         h_Binary->SetBinContent(Clusters.at(i_cl).bins_x.at(i_b),Clusters.at(i_cl).bins_y.at(i_b),Clusters.at(i_cl).ID+2);
+         h_Binary->SetBinContent(Clusters.at(i_cl).bins_x.at(i_b),Clusters.at(i_cl).bins_y.at(i_b),i_cl+2);
 
       }//i_b
 
    }//i_cl
-   
+
+ 
    h_Binary->SetStats(0);
    h_Binary->SetTitle(rse.c_str());
    h_Binary->Draw("colz");
-   c->Print("Clustered.png");
+   c->Print("Clustered.pdf");
 
-   cmd = "mv Clustered.png Plots/" + rse + "/";
+   cmd = "mv Clustered.pdf Plots/" + rse + "/";
    system(cmd.c_str());
 
    c->Clear();
+
+   gStyle->SetPalette();
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ClusterBuilder::DeadWireFill(int plane){
+
+   if(plane == 0){
+
+      for(size_t i=0;i<DeadChannels_Plane0.size();i++){
+
+         if(DeadChannels_Plane0.at(i) > h_Binary->GetXaxis()->GetBinLowEdge(1) && DeadChannels_Plane0.at(i) < h_Binary->GetXaxis()->GetBinLowEdge(h_Binary->GetNbinsX())){
+
+            for(int j=0;j<h_Binary->GetNbinsY();j++){
+               h_Binary->Fill(DeadChannels_Plane0.at(i),h_Binary->GetYaxis()->GetBinCenter(j),-1);
+            }
+         }
+      }
+   }
+
+   if(plane == 1){
+
+      for(size_t i=0;i<DeadChannels_Plane1.size();i++){
+
+         if(DeadChannels_Plane1.at(i) > h_Binary->GetXaxis()->GetBinLowEdge(1) && DeadChannels_Plane1.at(i) < h_Binary->GetXaxis()->GetBinLowEdge(h_Binary->GetNbinsX())){
+
+            for(int j=0;j<h_Binary->GetNbinsY();j++){
+               h_Binary->Fill(DeadChannels_Plane1.at(i),h_Binary->GetYaxis()->GetBinCenter(j),-1);
+            }
+         }
+      }
+   }
+
+   if(plane == 2){
+
+      for(size_t i=0;i<DeadChannels_Plane2.size();i++){
+
+         if(DeadChannels_Plane2.at(i) > h_Binary->GetXaxis()->GetBinLowEdge(1) && DeadChannels_Plane2.at(i) < h_Binary->GetXaxis()->GetBinLowEdge(h_Binary->GetNbinsX())){
+
+            for(int j=0;j<h_Binary->GetNbinsY();j++){
+               h_Binary->Fill(DeadChannels_Plane2.at(i),h_Binary->GetYaxis()->GetBinCenter(j),-1);
+            }
+         }
+      }
+   }
 
 
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 #endif

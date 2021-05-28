@@ -15,14 +15,13 @@
 int main(){
 
    // Setup the cluster builder object and load dead wire maps
-   // initialize with false if you don't want to draw plots
+   // initialize with false if you don't want to draw plots (faster)
    ClusterBuilder c(true);
    c.LoadDeadWireMaps("../DeadWireMaps/");
    c.SetThreshold(1.8);
 
    // Open the input file with wire trees
-   //TFile *f = TFile::Open("../data/WireTreesFHC_Overlay_NuWro_Background_kmistry_numi_run1_fhc_nuwro_filtered.root");
-   TFile *f = TFile::Open("../data/WireTreesFHC_NuWro_Hyperon_filtered.root");
+   TFile *f = TFile::Open("../data/WireTreesFHC_Overlay_NuWro_Hyperon_prod_numi_uboone_overlay_fhc_mcc9_run1_v51_nuwro_hyperon_nuwro_reco2_reco2_filtered.root");
 
    if ((!f) || f->IsZombie()) { delete f; return 1; } // just a precaution
    TTree *t;
@@ -65,7 +64,7 @@ int main(){
 
    // Event loop
    Long64_t nentries = t->GetEntriesFast();
-   for(size_t j=0;j<nentries && j < 5;j++){
+   for(size_t j=0;j<nentries && j<10;j++){
 
       t->GetEntry(j);
 
@@ -79,34 +78,37 @@ int main(){
       // Read in the wire info for this plane
       c.ReadData(*Wire_Channel_Plane0,*Wire_Tick_Plane0,*Wire_Signal_Plane0,rse);
 
-      std::vector<int> ClusterIDs;
+         std::vector<int> ClusterIDs;
+         std::vector<int> ClusterSizes;
 
+        
       // Try making some clusters using track starts as seeds
       for(size_t i_tr=0;i_tr<TrackStart_Channel_Plane0->size();i_tr++){
 
-         // Cluster building function.
-         // Returns -1 if the seed was in an empty bin
+        std::pair<int,int> thisClusterIDSize;
+
+         // Cluster building function. Returns (ID,size)
+         // Returns -1,-1 if the seed was in an empty bin
          // If the seed bin already belonged to another cluster, returns the ID of that cluster
-         int thisClusterID = c.MakeCluster(TrackStart_Channel_Plane0->at(i_tr),TrackStart_Time_Plane0->at(i_tr),i_tr+1);
-
-         if(thisClusterID > 0) ClusterIDs.push_back(thisClusterID);
-
+         thisClusterIDSize = c.MakeCluster(TrackStart_Channel_Plane0->at(i_tr),TrackStart_Time_Plane0->at(i_tr),i_tr+1);
+         if(thisClusterIDSize.first > 0){ ClusterIDs.push_back(thisClusterIDSize.first); ClusterSizes.push_back(thisClusterIDSize.second); }
       }
 
       // Print list of cluster IDs, interpret this for selection
       if(ClusterIDs.size()){
 
-         std::cout << "List of cluster IDs" << std::endl;
+         std::cout << "List of cluster IDs and sizes" << std::endl;
 
-         for(size_t i_c=0;i_c<ClusterIDs.size();i_c++) std::cout << ClusterIDs.at(i_c) << " ";  
+         for(size_t i_c=0;i_c<ClusterIDs.size();i_c++) std::cout << "ID=" << ClusterIDs.at(i_c) << "  Size=" << ClusterSizes.at(i_c) << "  ";  
 
          std::cout << std::endl;
 
       }
+        
 
-      c.DrawClustered(rse);
-
-
+      c.DrawClustered(rse,0);
+ 
+      c.Reset();
 
    }//event loop
 
