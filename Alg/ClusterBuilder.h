@@ -16,7 +16,7 @@ class ClusterBuilder {
    public: 
 
       ClusterBuilder();
-      ClusterBuilder(bool draw);
+      ClusterBuilder(bool draw,std::string displaydir="");
       ~ClusterBuilder();
 
       // Setup functions
@@ -44,6 +44,8 @@ class ClusterBuilder {
 
       // Empty the list of clusters. do before reading a new event
       void Reset();
+        
+      void SetDisplayDir(std::string dir);
 
    private:
 
@@ -59,6 +61,7 @@ class ClusterBuilder {
 
       TH2D *h_Raw;
       TH2D *h_Binary;
+      TH2D *h_Clustered;
 
       TCanvas *c;
 
@@ -70,12 +73,16 @@ class ClusterBuilder {
 
        void DeadWireFill(int plane);
 
+       void Focus();
+
+       std::string DisplayDir="";
 
    public:
 
-      void DrawRaw(std::string rse="");
-      void DrawBinary(std::string rse="");
-      void DrawClustered(std::string rse="",int plane=-1);
+      // pass = -1 (selection not applicable) , pass = 0 = not selected plane , pass = 1 = selected plane
+      void DrawRaw(std::string rse="",int pass=-1);
+      void DrawBinary(std::string rse="",int pass=-1);
+      void DrawClustered(std::string rse="",int plane=-1,int pass=-1);
      
 };
 

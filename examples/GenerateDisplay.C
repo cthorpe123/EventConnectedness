@@ -1,3 +1,4 @@
+
 // Example root macro using clustering tool
 
 R__LOAD_LIBRARY($CONNECTEDNESS_BASE/lib/libClusterBuilder.so)
@@ -13,12 +14,14 @@ R__LOAD_LIBRARY($CONNECTEDNESS_BASE/lib/libClusterBuilder.so)
    //  infile = file containing wire trees
    //  intracklist = text file with indices of tracks (muon proton pion) to use for seeding clusters
 
-   void HyperonSelectionTool(std::string infile,std::string intracklist,bool Draw){
+   void GenerateDisplay(std::string infile,std::string intracklist,int runtodraw,int subruntodraw,int eventtodraw){
 
-
+      // Setup the cluster builder object and load dead wire maps
+      // initialize with false if you don't want to draw plots
+  
       std::string indir = "../data/";
 
-      // Minimum cluster size accepted
+      // minimum cluster size accepted
       int min_size = 50;
 
       // Open the input file with wire trees
@@ -31,7 +34,6 @@ R__LOAD_LIBRARY($CONNECTEDNESS_BASE/lib/libClusterBuilder.so)
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-      gSystem->Exec("mkdir -p EventLists/");
 
       // Create a file to hold the list of selected events
       std::string name = indir + infile;
@@ -40,15 +42,11 @@ R__LOAD_LIBRARY($CONNECTEDNESS_BASE/lib/libClusterBuilder.so)
 
          name = name.substr(name.find('/') + 1);
 
-      }
+        }
 
-      std::ofstream out("EventLists/" + name + "_Selected.txt");
+      //std::ofstream out("EventLists/" + name + "_Selected.txt");
 
-      std::string PlotDir = name;
-
-      // Setup the cluster builder object and load dead wire maps
-      // initialize with false if you don't want to draw plots
-      ClusterBuilder c(Draw,PlotDir);
+      ClusterBuilder c(true,name);
       c.LoadDeadWireMaps("../DeadWireMaps/");
       c.SetThreshold(1.8);
 
@@ -226,20 +224,23 @@ R__LOAD_LIBRARY($CONNECTEDNESS_BASE/lib/libClusterBuilder.so)
       int selected_events=0;
       int total_events=0;
 
-      Long64_t nentries = t->GetEntriesFast();
-
       // Event loop
+      Long64_t nentries = t->GetEntriesFast();
       for(size_t j=0;j<nentries;j++){
+
 
          if(debug) std::cout << "Processing event " << j << std::endl;
 
          t->GetEntry(j);
-
+        
          // Get the indexes of the muon, decay proton/pion candidates in the track list
          int muon_index,proton_index,pion_index;
          tracklist >> muon_index >> proton_index >> pion_index;
 
+         if(run != runtodraw || subrun != subruntodraw || event != eventtodraw) continue;        
+
          if(debug) std::cout << "Muon=" << muon_index << "  DecayProton=" << proton_index << "  DecayPion=" << pion_index << std::endl;
+         
 
          // Number of planes passing selection criteria
          int Planes_Passed = 0;
@@ -279,11 +280,9 @@ R__LOAD_LIBRARY($CONNECTEDNESS_BASE/lib/libClusterBuilder.so)
          // Clusters should all be of at least size min_size
          if(ClusterIDs_Plane0.size() == 3 && ClusterIDs_Plane0.at(0) == 1 && ClusterIDs_Plane0.at(1) == 2 && ClusterIDs_Plane0.at(2) == 2 && ClusterSizes_Plane0.at(0) > min_size && ClusterSizes_Plane0.at(1) > min_size && ClusterSizes_Plane0.at(2) > min_size){
 
-            Planes_Passed++; 
-            if(Draw) c.DrawClustered(rse,0,1); 
-
-         }
-         else if(Draw) c.DrawClustered(rse,0,0);
+ Planes_Passed++; 
+ c.DrawClustered(rse,0); 
+ }
 
          c.Reset();
 
@@ -319,11 +318,10 @@ R__LOAD_LIBRARY($CONNECTEDNESS_BASE/lib/libClusterBuilder.so)
          // Clusters should all be of at least size min_size
          if(ClusterIDs_Plane1.size() == 3 && ClusterIDs_Plane1.at(0) == 1 && ClusterIDs_Plane1.at(1) == 2 && ClusterIDs_Plane1.at(2) == 2 && ClusterSizes_Plane1.at(0) > min_size && ClusterSizes_Plane1.at(1) > min_size && ClusterSizes_Plane1.at(2) > min_size){
 
-            Planes_Passed++; 
-            if(Draw) c.DrawClustered(rse,1,1); 
+ Planes_Passed++; 
+ c.DrawClustered(rse,1); 
 
-         }
-         else if(Draw) c.DrawClustered(rse,1,0);
+}
 
          c.Reset();
 
@@ -360,17 +358,16 @@ R__LOAD_LIBRARY($CONNECTEDNESS_BASE/lib/libClusterBuilder.so)
          // Clusters should all be of at least size min_size
          if(ClusterIDs_Plane2.size() == 3 && ClusterIDs_Plane2.at(0) == 1 && ClusterIDs_Plane2.at(1) == 2 && ClusterIDs_Plane2.at(2) == 2 && ClusterSizes_Plane2.at(0) > min_size && ClusterSizes_Plane2.at(1) > min_size && ClusterSizes_Plane2.at(2) > min_size){
 
-            Planes_Passed++; 
-            if(Draw) c.DrawClustered(rse,2,1); 
+ Planes_Passed++; 
+c.DrawClustered(rse,2); 
 
-         }
-         else if(Draw) c.DrawClustered(rse,2,0); 
+}
 
          c.Reset();
 
          if(Planes_Passed > 0){
+
             selected_events++; 
-            out << run << "  " << subrun << "  " << event << std::endl;
          }
 
          total_events++;
@@ -378,8 +375,6 @@ R__LOAD_LIBRARY($CONNECTEDNESS_BASE/lib/libClusterBuilder.so)
       }//event loop
 
       std::cout << "Selected " << selected_events << "/" << total_events << " events" << std::endl;
-
-      out.close();
 
    }
 

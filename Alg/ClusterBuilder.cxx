@@ -12,11 +12,23 @@ ClusterBuilder::ClusterBuilder(){
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ClusterBuilder::ClusterBuilder(bool draw){
+ClusterBuilder::ClusterBuilder(bool draw,std::string displaydir){
 
    DrawEverything = draw;
 
-   if(DrawEverything) c = new TCanvas("c","c");
+   system("mkdir -p Displays/");
+
+   if(DrawEverything){
+
+      c = new TCanvas("c","c");
+
+      if(displaydir != "") DisplayDir = displaydir;
+
+      system(("mkdir -p Displays/" + DisplayDir).c_str());
+      system(("mkdir -p Displays/" + DisplayDir + "/Pass/").c_str());
+      system(("mkdir -p Displays/" + DisplayDir + "/Fail/").c_str());
+
+   }
 
 }
 
@@ -24,8 +36,10 @@ ClusterBuilder::ClusterBuilder(bool draw){
 
 ClusterBuilder::~ClusterBuilder(){
 
-   delete h_Raw;
-   delete h_Binary;
+//   delete h_Raw;
+//   delete h_Binary;
+//   delete h_Clustered;
+
    if(DrawEverything) delete c;
 
 }
@@ -86,6 +100,9 @@ void ClusterBuilder::Reset(){
 
    Clusters.clear();
 
+   delete h_Raw;
+   delete h_Binary;
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -121,13 +138,6 @@ void ClusterBuilder::ReadData(std::vector<int> channel,std::vector<int> tick,std
       if(signal.at(i) > Threshold) h_Binary->Fill(channel.at(i),tick.at(i),1);
    }
 
-   // Draw the raw and binary histograms if desired
-   if(DrawEverything){
-
-      DrawRaw(rse);
-      DrawBinary(rse);
-
-   }
 
 }
 
@@ -398,14 +408,13 @@ bool ClusterBuilder::SeedDeadWireCheck(std::vector<int> seeds_channel,std::vecto
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ClusterBuilder::DrawRaw(std::string rse){
+void ClusterBuilder::DrawRaw(std::string rse,int pass){
 
    if(!DrawEverything) return;
 
-   std::string cmd = "mkdir -p Plots";  
-   system(cmd.c_str()); 
-   cmd = "mkdir -p Plots/" + rse + "/";
-   system(cmd.c_str());
+   if(pass == -1) system(("mkdir -p Displays/" + DisplayDir + "/" + rse + "/").c_str());
+   else if(pass == 0) system(("mkdir -p Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
+   else if(pass == 1) system(("mkdir -p Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
 
    h_Raw->SetContour(100);
    h_Raw->SetStats(0);
@@ -413,8 +422,9 @@ void ClusterBuilder::DrawRaw(std::string rse){
    h_Raw->Draw("colz");
    c->Print("Raw.pdf");
 
-   cmd = "mv Raw.pdf Plots/" + rse + "/";
-   system(cmd.c_str());
+   if(pass == -1) system(("mv Raw.pdf Displays/" + DisplayDir + "/" + rse + "/").c_str());
+   else if(pass == 0) system(("mv Raw.pdf Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
+   else if(pass == 1) system(("mv Raw.pdf Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
 
    c->Clear();
 
@@ -422,14 +432,15 @@ void ClusterBuilder::DrawRaw(std::string rse){
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ClusterBuilder::DrawBinary(std::string rse){
+void ClusterBuilder::DrawBinary(std::string rse,int pass){
 
    if(!DrawEverything) return;
 
-   std::string cmd = "mkdir -p Plots";  
-   system(cmd.c_str()); 
-   cmd = "mkdir -p Plots/" + rse + "/";
-   system(cmd.c_str());
+   std::string cmd;
+        
+   if(pass == -1) system(("mkdir -p Displays/" + DisplayDir + "/" + rse + "/").c_str());
+   else if(pass == 0) system(("mkdir -p Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
+   else if(pass == 1) system(("mkdir -p Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
 
    Int_t colors[] = {0,4 }; // #colors >= #levels - 1
    gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
@@ -441,8 +452,9 @@ void ClusterBuilder::DrawBinary(std::string rse){
 
    c->Clear();
 
-   cmd = "mv Binary.pdf Plots/" + rse + "/";
-   system(cmd.c_str());
+   if(pass == -1) system(("mv Binary.pdf Displays/" + DisplayDir + "/" + rse + "/").c_str());
+   else if(pass == 0) system(("mv Binary.pdf Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
+   else if(pass == 1) system(("mv Binary.pdf Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
 
    gStyle->SetPalette();
 
@@ -450,51 +462,55 @@ void ClusterBuilder::DrawBinary(std::string rse){
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ClusterBuilder::DrawClustered(std::string rse,int plane){
+void ClusterBuilder::DrawClustered(std::string rse,int plane,int pass){
 
    if(!DrawEverything) return;
 
-   // Draw on dead wires
-   if(plane != -1) DeadWireFill(plane);
+   std::cout << "pass=" << pass << std::endl;
+   
 
-   std::string cmd = "mkdir -p Plots";  
-   system(cmd.c_str()); 
-   cmd = "mkdir -p Plots/" + rse + "/";
-   system(cmd.c_str());
+   if(pass == -1) system(("mkdir -p Displays/" + DisplayDir + "/" + rse + "/").c_str());
+   else if(pass == 0) system(("mkdir -p Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
+   else if(pass == 1) system(("mkdir -p Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
+
+   h_Clustered = (TH2D*)h_Binary->Clone();
+
+   // Draw on dead wires - makes pdfs much bigger so use only if needed
+   //if(plane != -1) DeadWireFill(plane);
 
    // Set color palette
    int nclusters = Clusters.size();
 
    // hacky way to force color transitions to happen at the right bin height
-   h_Binary->SetBinContent(1,1,-1.5);
-   h_Binary->SetBinContent(1,2,nclusters+1.5);
+   //h_Clustered->SetBinContent(1,1,-1.5);
+   //h_Clustered->SetBinContent(1,2,nclusters+1.5);
      
    if(nclusters == 0){
-   Int_t colors[] = {1,0,2};
+   Int_t colors[] = {2,3};
    gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
    }
    else if(nclusters == 1){
-   Int_t colors[] = {1,0,2,3};
+   Int_t colors[] = {2,3,4};
    gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
    }
    else if(nclusters == 2){
-   Int_t colors[] = {1,0,2,3,4};
+   Int_t colors[] = {2,3,4,6};
    gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
    }
    else if(nclusters == 3){
-   Int_t colors[] = {1,0,2,3,4,6};
+   Int_t colors[] = {2,3,4,6,7};
    gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
    }
    else if(nclusters == 4){
-   Int_t colors[] = {1,0,2,3,4,6,7};
+   Int_t colors[] = {2,3,4,6,7,8};
    gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
    }
    else if(nclusters == 5){
-   Int_t colors[] = {1,0,2,3,4,6,7,40};
+   Int_t colors[] = {2,3,4,6,7,40,46};
    gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
    }
    else{
-   Int_t colors[] = {1,0,2,3,4,6,7,40,46};
+   Int_t colors[] = {2,3,4,6,7,40,46,12};
    gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
    }
 
@@ -503,22 +519,28 @@ void ClusterBuilder::DrawClustered(std::string rse,int plane){
 
       for(size_t i_b=0;i_b<Clusters.at(i_cl).bins_x.size();i_b++){
 
-         h_Binary->SetBinContent(Clusters.at(i_cl).bins_x.at(i_b),Clusters.at(i_cl).bins_y.at(i_b),i_cl+2);
+         h_Clustered->SetBinContent(Clusters.at(i_cl).bins_x.at(i_b),Clusters.at(i_cl).bins_y.at(i_b),i_cl+2);
 
       }//i_b
 
    }//i_cl
 
+   // Set x and y ranges
+   Focus();
  
-   h_Binary->SetStats(0);
-   h_Binary->SetTitle(rse.c_str());
-   h_Binary->Draw("colz");
+   h_Clustered->SetStats(0);
+   h_Clustered->SetTitle(rse.c_str());
+   h_Clustered->Draw("colz");
    c->Print("Clustered.pdf");
 
-   cmd = "mv Clustered.pdf Plots/" + rse + "/";
-   system(cmd.c_str());
+   if(pass == -1) system(("mv Clustered.pdf Displays/" + DisplayDir + "/" + rse + "/").c_str());
+   else if(pass == 0) system(("mv Clustered.pdf Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
+   else if(pass == 1) system(("mv Clustered.pdf Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
 
    c->Clear();
+
+   DrawBinary(rse,pass);
+   DrawRaw(rse,pass); 
 
    gStyle->SetPalette();
 
@@ -532,10 +554,10 @@ void ClusterBuilder::DeadWireFill(int plane){
 
       for(size_t i=0;i<DeadChannels_Plane0.size();i++){
 
-         if(DeadChannels_Plane0.at(i) > h_Binary->GetXaxis()->GetBinLowEdge(1) && DeadChannels_Plane0.at(i) < h_Binary->GetXaxis()->GetBinLowEdge(h_Binary->GetNbinsX())){
+         if(DeadChannels_Plane0.at(i) > h_Clustered->GetXaxis()->GetBinLowEdge(1) && DeadChannels_Plane0.at(i) < h_Clustered->GetXaxis()->GetBinLowEdge(h_Clustered->GetNbinsX())){
 
-            for(int j=0;j<h_Binary->GetNbinsY();j++){
-               h_Binary->Fill(DeadChannels_Plane0.at(i),h_Binary->GetYaxis()->GetBinCenter(j),-1);
+            for(int j=0;j<h_Clustered->GetNbinsY();j++){
+               h_Clustered->Fill(DeadChannels_Plane0.at(i),h_Clustered->GetYaxis()->GetBinCenter(j),-1);
             }
          }
       }
@@ -545,10 +567,10 @@ void ClusterBuilder::DeadWireFill(int plane){
 
       for(size_t i=0;i<DeadChannels_Plane1.size();i++){
 
-         if(DeadChannels_Plane1.at(i) > h_Binary->GetXaxis()->GetBinLowEdge(1) && DeadChannels_Plane1.at(i) < h_Binary->GetXaxis()->GetBinLowEdge(h_Binary->GetNbinsX())){
+         if(DeadChannels_Plane1.at(i) > h_Clustered->GetXaxis()->GetBinLowEdge(1) && DeadChannels_Plane1.at(i) < h_Clustered->GetXaxis()->GetBinLowEdge(h_Clustered->GetNbinsX())){
 
-            for(int j=0;j<h_Binary->GetNbinsY();j++){
-               h_Binary->Fill(DeadChannels_Plane1.at(i),h_Binary->GetYaxis()->GetBinCenter(j),-1);
+            for(int j=0;j<h_Clustered->GetNbinsY();j++){
+               h_Clustered->Fill(DeadChannels_Plane1.at(i),h_Clustered->GetYaxis()->GetBinCenter(j),-1);
             }
          }
       }
@@ -558,10 +580,10 @@ void ClusterBuilder::DeadWireFill(int plane){
 
       for(size_t i=0;i<DeadChannels_Plane2.size();i++){
 
-         if(DeadChannels_Plane2.at(i) > h_Binary->GetXaxis()->GetBinLowEdge(1) && DeadChannels_Plane2.at(i) < h_Binary->GetXaxis()->GetBinLowEdge(h_Binary->GetNbinsX())){
+         if(DeadChannels_Plane2.at(i) > h_Clustered->GetXaxis()->GetBinLowEdge(1) && DeadChannels_Plane2.at(i) < h_Clustered->GetXaxis()->GetBinLowEdge(h_Clustered->GetNbinsX())){
 
-            for(int j=0;j<h_Binary->GetNbinsY();j++){
-               h_Binary->Fill(DeadChannels_Plane2.at(i),h_Binary->GetYaxis()->GetBinCenter(j),-1);
+            for(int j=0;j<h_Clustered->GetNbinsY();j++){
+               h_Clustered->Fill(DeadChannels_Plane2.at(i),h_Clustered->GetYaxis()->GetBinCenter(j),-1);
             }
          }
       }
@@ -572,5 +594,56 @@ void ClusterBuilder::DeadWireFill(int plane){
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void ClusterBuilder::Focus(){
+
+   // Find range of x and y spanned by clusters, only draw this range + a bit of padding
+
+   int min_x=10000,max_x=-10000,min_y=10000,max_y=-10000;
+
+   for(size_t i_c=0;i_c<Clusters.size();i_c++){
+
+      Cluster c = Clusters.at(i_c);
+
+      for(size_t i_b=0;i_b<c.bins_x.size();i_b++){
+
+         if(c.bins_x.at(i_b) > max_x) max_x = c.bins_x.at(i_b);
+         if(c.bins_x.at(i_b) < min_x) min_x = c.bins_x.at(i_b);
+         if(c.bins_y.at(i_b) > max_y) max_y = c.bins_y.at(i_b);
+         if(c.bins_y.at(i_b) < min_y) min_y = c.bins_y.at(i_b);
+
+      }
+
+   }
+
+double  range_x = max_x - min_x;
+double  range_y = max_y - min_y;
+
+h_Clustered->GetXaxis()->SetRange(min_x-range_x*0.2,max_x+range_x*0.2);
+h_Clustered->GetYaxis()->SetRange(min_y-range_y*0.2,max_y+range_y*0.2);
+
+h_Raw->GetXaxis()->SetRange(min_x-range_x*0.2,max_x+range_x*0.2);
+h_Raw->GetYaxis()->SetRange(min_y-range_y*0.2,max_y+range_y*0.2);
+
+h_Binary->GetXaxis()->SetRange(min_x-range_x*0.2,max_x+range_x*0.2);
+h_Binary->GetYaxis()->SetRange(min_y-range_y*0.2,max_y+range_y*0.2);
+
+//h_Clustered->SetBinContent(min_x-range_x*0.2+1,min_y-range_y*0.2+1,);
+h_Clustered->SetBinContent(min_x-range_x*0.2+1,min_y-range_y*0.2+2,Clusters.size()+1.0);
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ClusterBuilder::SetDisplayDir(std::string dir){
+
+   DisplayDir = dir;
+
+   system(("mkdir -p Displays/" + DisplayDir).c_str());
+   system(("mkdir -p Displays/" + DisplayDir + "/Pass/").c_str());
+   system(("mkdir -p Displays/" + DisplayDir + "/Fail/").c_str());
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #endif
