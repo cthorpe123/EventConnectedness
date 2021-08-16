@@ -1,6 +1,8 @@
 #ifndef _Cluster_h_
 #define _Cluster_h_
 
+using namespace Connectedness;
+
 struct Cluster {
 
 int ID;

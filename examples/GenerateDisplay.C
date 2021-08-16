@@ -46,7 +46,7 @@ R__LOAD_LIBRARY($CONNECTEDNESS_BASE/lib/libClusterBuilder.so)
 
       //std::ofstream out("EventLists/" + name + "_Selected.txt");
 
-      ClusterBuilder c(true,name);
+      Connectedness::ClusterBuilder c(true,name);
       c.LoadDeadWireMaps("../DeadWireMaps/");
       c.SetThreshold(1.8);
 

@@ -16,7 +16,7 @@ int main(){
 
    // Setup the cluster builder object and load dead wire maps
    // initialize with false if you don't want to draw plots (faster)
-   ClusterBuilder c(true);
+   Connectedness::ClusterBuilder c(true);
    c.LoadDeadWireMaps("../DeadWireMaps/");
    c.SetThreshold(1.8);
 

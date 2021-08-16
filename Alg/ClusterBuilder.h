@@ -10,7 +10,18 @@
 #include <TROOT.h>
 #include <TStyle.h>
 
-#include "Cluster.h"
+namespace Connectedness {
+
+struct Cluster {
+
+int ID;
+
+// Lists of bins in this cluster
+std::vector<int> bins_x;
+std::vector<int> bins_y;
+
+
+};
 
 class ClusterBuilder {
 
@@ -87,6 +98,7 @@ class ClusterBuilder {
      
 };
 
+}
 
 #endif
 

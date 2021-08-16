@@ -48,7 +48,7 @@ R__LOAD_LIBRARY($CONNECTEDNESS_BASE/lib/libClusterBuilder.so)
 
       // Setup the cluster builder object and load dead wire maps
       // initialize with false if you don't want to draw plots
-      ClusterBuilder c(Draw,PlotDir);
+      Connectedness::ClusterBuilder c(Draw,PlotDir);
       c.LoadDeadWireMaps("../DeadWireMaps/");
       c.SetThreshold(1.8);
 
