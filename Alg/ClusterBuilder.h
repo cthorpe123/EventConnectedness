@@ -54,7 +54,11 @@ class ClusterBuilder {
       // Check seeds are not separated by dead wires
       bool SeedDeadWireCheck(std::vector<int> seeds_channel,std::vector<int> seeds_tick, int plane);
 
-      // Empty the list of clusters. do before reading a new event
+
+      // Empty the list of clusters, do before running different set of clusters for same event
+      void ClearClusters();
+
+      // Empty the list of clusters and delete histograms, do before reading a new event
       void Reset();
         
       void SetDisplayDir(std::string dir);
@@ -71,9 +75,9 @@ class ClusterBuilder {
 
       double Threshold=1.8;
 
-      TH2D *h_Raw;
-      TH2D *h_Binary;
-      TH2D *h_Clustered;
+      TH2D *h_Raw = nullptr;
+      TH2D *h_Binary = nullptr;
+      TH2D *h_Clustered = nullptr;
 
       TCanvas *c;
 

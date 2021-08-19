@@ -98,12 +98,20 @@ MaxSearchY = y_max;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void ClusterBuilder::ClearClusters(){
+
+   Clusters.clear();
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void ClusterBuilder::Reset(){
 
    Clusters.clear();
 
-   delete h_Raw;
-   delete h_Binary;
+   if(h_Raw != nullptr)   delete h_Raw;
+   if(h_Binary != nullptr)   delete h_Binary;
 
 }
 
@@ -146,8 +154,6 @@ void ClusterBuilder::ReadData(std::vector<int> channel,std::vector<int> tick,std
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::pair<int,int> ClusterBuilder::MakeCluster(int seed_channel,int seed_tick,int ID){
-
-   //std::cout << "Building cluster " << ID << std::endl;
 
    // Get seed location in bin space
    int seed_channel_b = h_Raw->GetXaxis()->FindBin(seed_channel-XOffset);
