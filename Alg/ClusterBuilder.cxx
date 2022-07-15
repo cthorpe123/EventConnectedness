@@ -378,8 +378,6 @@ std::vector<Cluster> ClusterBuilder::GetClusters(){
 
 bool ClusterBuilder::SeedDeadWireCheck(std::vector<int> seeds_channel,std::vector<int> seeds_tick,int plane){
 
-   //std::cout << "Checking if seeds are separated by dead channels" << std::endl;
-
    if(seeds_channel.size() != seeds_tick.size()){
       std::cout << "Input channel/tick/signal vectors of different sizes! Exiting" << std::endl;
       return true;
@@ -393,21 +391,16 @@ bool ClusterBuilder::SeedDeadWireCheck(std::vector<int> seeds_channel,std::vecto
    int max_ch=seeds_channel.at(0)-XOffset;
 
    for(size_t i_s=1;i_s<seeds_channel.size();i_s++){
-
       if(seeds_channel.at(i_s)-XOffset < min_ch) min_ch = seeds_channel.at(i_s)-XOffset;
       if(seeds_channel.at(i_s)-XOffset > max_ch) max_ch = seeds_channel.at(i_s)-XOffset;
-
    }
 
    int ch=min_ch;
 
    while(ch <= max_ch){
-
-      // Search the list of dead channels
-      if(plane == 0 && (std::find(DeadChannels_Plane0.begin(),DeadChannels_Plane0.end(),ch) != DeadChannels_Plane0.end())){ return true; }
-      if(plane == 1 && (std::find(DeadChannels_Plane1.begin(),DeadChannels_Plane1.end(),ch) != DeadChannels_Plane1.end())){ return true; }
-      if(plane == 2 && (std::find(DeadChannels_Plane2.begin(),DeadChannels_Plane2.end(),ch) != DeadChannels_Plane2.end())){ return true; }
-
+      if(plane == 0 && (std::find(DeadChannels_Plane0.begin(),DeadChannels_Plane0.end(),ch) != DeadChannels_Plane0.end())) return true;
+      if(plane == 1 && (std::find(DeadChannels_Plane1.begin(),DeadChannels_Plane1.end(),ch) != DeadChannels_Plane1.end())) return true;
+      if(plane == 2 && (std::find(DeadChannels_Plane2.begin(),DeadChannels_Plane2.end(),ch) != DeadChannels_Plane2.end())) return true;
       ch++;
    }
 
@@ -420,9 +413,12 @@ void ClusterBuilder::DrawRaw(std::string rse,int pass){
 
    if(!DrawEverything) return;
 
+/*
    if(pass == -1) system(("mkdir -p Displays/" + DisplayDir + "/" + rse + "/").c_str());
    else if(pass == 0) system(("mkdir -p Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
    else if(pass == 1) system(("mkdir -p Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
+*/
+   system(("mkdir -p Displays/" + DisplayDir + "/" + rse + "/").c_str());
 
    h_Raw->SetContour(100);
    h_Raw->SetStats(0);
@@ -430,9 +426,13 @@ void ClusterBuilder::DrawRaw(std::string rse,int pass){
    h_Raw->Draw("colz");
    c->Print("Raw.pdf");
 
+/*
    if(pass == -1) system(("mv Raw.pdf Displays/" + DisplayDir + "/" + rse + "/").c_str());
    else if(pass == 0) system(("mv Raw.pdf Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
    else if(pass == 1) system(("mv Raw.pdf Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
+*/
+
+   system(("mv Raw.pdf Displays/" + DisplayDir + "/" + rse + "/").c_str());
 
    c->Clear();
 
@@ -445,10 +445,13 @@ void ClusterBuilder::DrawBinary(std::string rse,int pass){
    if(!DrawEverything) return;
 
    std::string cmd;
-        
+   /*     
    if(pass == -1) system(("mkdir -p Displays/" + DisplayDir + "/" + rse + "/").c_str());
    else if(pass == 0) system(("mkdir -p Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
    else if(pass == 1) system(("mkdir -p Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
+        */
+   system(("mkdir -p Displays/" + DisplayDir + "/" + rse + "/").c_str());
+
 
    Int_t colors[] = {0,4 }; // #colors >= #levels - 1
    gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
@@ -460,9 +463,13 @@ void ClusterBuilder::DrawBinary(std::string rse,int pass){
 
    c->Clear();
 
+/*
    if(pass == -1) system(("mv Binary.pdf Displays/" + DisplayDir + "/" + rse + "/").c_str());
    else if(pass == 0) system(("mv Binary.pdf Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
    else if(pass == 1) system(("mv Binary.pdf Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
+*/
+
+   system(("mv Binary.pdf Displays/" + DisplayDir + "/" + rse + "/").c_str());
 
    gStyle->SetPalette();
 
@@ -476,10 +483,12 @@ void ClusterBuilder::DrawClustered(std::string rse,int plane,int pass){
 
    std::cout << "pass=" << pass << std::endl;
    
-
+/*
    if(pass == -1) system(("mkdir -p Displays/" + DisplayDir + "/" + rse + "/").c_str());
    else if(pass == 0) system(("mkdir -p Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
    else if(pass == 1) system(("mkdir -p Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
+*/
+   system(("mkdir -p Displays/" + DisplayDir + "/" + rse + "/").c_str());
 
    h_Clustered = (TH2D*)h_Binary->Clone();
 
@@ -540,10 +549,13 @@ void ClusterBuilder::DrawClustered(std::string rse,int plane,int pass){
    h_Clustered->SetTitle(rse.c_str());
    h_Clustered->Draw("colz");
    c->Print("Clustered.pdf");
-
+/*
    if(pass == -1) system(("mv Clustered.pdf Displays/" + DisplayDir + "/" + rse + "/").c_str());
    else if(pass == 0) system(("mv Clustered.pdf Displays/" + DisplayDir + "/Fail/" + rse + "/").c_str());
    else if(pass == 1) system(("mv Clustered.pdf Displays/" + DisplayDir + "/Pass/" + rse + "/").c_str());
+*/
+
+   system(("mv Clustered.pdf Displays/" + DisplayDir + "/" + rse + "/").c_str());
 
    c->Clear();
 
@@ -626,14 +638,13 @@ void ClusterBuilder::Focus(){
 double  range_x = max_x - min_x;
 double  range_y = max_y - min_y;
 
-h_Clustered->GetXaxis()->SetRange(min_x-range_x*0.2,max_x+range_x*0.2);
-h_Clustered->GetYaxis()->SetRange(min_y-range_y*0.2,max_y+range_y*0.2);
+h_Clustered->GetXaxis()->SetRange(min_x-range_x*0.2-100,max_x+range_x*0.2+100);
+h_Clustered->GetYaxis()->SetRange(min_y-range_y*0.2-500,max_y+range_y*0.2+500);
+h_Raw->GetXaxis()->SetRange(min_x-range_x*0.2-100,max_x+range_x*0.2+100);
+h_Raw->GetYaxis()->SetRange(min_y-range_y*0.2-500,max_y+range_y*0.2+500);
+h_Binary->GetXaxis()->SetRange(min_x-range_x*0.2-100,max_x+range_x*0.2+100);
+h_Binary->GetYaxis()->SetRange(min_y-range_y*0.2-500,max_y+range_y*0.2+500);
 
-h_Raw->GetXaxis()->SetRange(min_x-range_x*0.2,max_x+range_x*0.2);
-h_Raw->GetYaxis()->SetRange(min_y-range_y*0.2,max_y+range_y*0.2);
-
-h_Binary->GetXaxis()->SetRange(min_x-range_x*0.2,max_x+range_x*0.2);
-h_Binary->GetYaxis()->SetRange(min_y-range_y*0.2,max_y+range_y*0.2);
 
 //h_Clustered->SetBinContent(min_x-range_x*0.2+1,min_y-range_y*0.2+1,);
 h_Clustered->SetBinContent(min_x-range_x*0.2+1,min_y-range_y*0.2+2,Clusters.size()+1.0);
