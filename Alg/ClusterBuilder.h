@@ -12,15 +12,19 @@
 
 namespace Connectedness {
 
+enum e_Planes{kPlane0,kPlane1,kPlane2};
+
 struct Cluster {
 
-int ID;
+   int ID;
 
-// Lists of bins in this cluster
-std::vector<int> bins_x;
-std::vector<int> bins_y;
+   // Lists of bins in this cluster
+   std::vector<int> bins_x;
+   std::vector<int> bins_y;
 
-
+   // Seed bins
+   int seed_bin_x;
+   int seed_bin_y;
 };
 
 class ClusterBuilder {
@@ -42,6 +46,7 @@ class ClusterBuilder {
       // Event processing functions
 
       void ReadData(std::vector<int> channel,std::vector<int> tick,std::vector<double> signal,std::string rse="");
+      void ReadData(TH2D* h_Activity,std::string rse="");
 
       // Returns the ID of the cluster (check this against list of existing cluster IDs to
       // see if some merging has taken place). Returns -1,-1 if seed landed on empty bin 
@@ -54,7 +59,6 @@ class ClusterBuilder {
       // Check seeds are not separated by dead wires
       bool SeedDeadWireCheck(std::vector<int> seeds_channel,std::vector<int> seeds_tick, int plane);
 
-
       // Empty the list of clusters, do before running different set of clusters for same event
       void ClearClusters();
 
@@ -62,6 +66,8 @@ class ClusterBuilder {
       void Reset();
         
       void SetDisplayDir(std::string dir);
+
+      void SetGrowthArea(double area);
 
    private:
 
@@ -74,6 +80,7 @@ class ClusterBuilder {
       std::vector<int> DeadChannels_Plane2;
 
       double Threshold=1.8;
+      double GrowthArea=1000;
 
       TH2D *h_Raw = nullptr;
       TH2D *h_Binary = nullptr;
@@ -82,25 +89,36 @@ class ClusterBuilder {
       TCanvas *c;
 
       std::vector<Cluster> Clusters;
+      std::vector<int> SeedChannels;
+      std::vector<int> SeedTicks;
 
       std::pair<int,int> FindNearestOccupiedBin(TH2D *hist,int x, int y);
       int MaxSearchX = 2;
       int MaxSearchY = 15;
 
-       void DeadWireFill(int plane);
+      void DeadWireFill(int plane);
 
-       void Focus();
+      void Focus();
 
-       std::string DisplayDir="";
+      std::string DisplayDir="";
 
    public:
 
       // pass = -1 (selection not applicable) , pass = 0 = not selected plane , pass = 1 = selected plane
-      void DrawRaw(std::string rse="",int pass=-1);
-      void DrawBinary(std::string rse="",int pass=-1);
-      void DrawClustered(std::string rse="",int plane=-1,int pass=-1);
-     
+      void DrawRaw(std::string rse="",int plane=0,int pass=-1);
+      void DrawBinary(std::string rse="",int plane=0,int pass=-1);
+      void DrawClustered(std::string rse="",int plane=0,int pass=-1);     
 };
+
+
+// Distance between two points defined in channel/tick space
+double Separation(int channel_1,int tick_1,int channel_2,int tick_2){
+
+   double delta_P = (channel_2 - channel_1)/3.33328;
+   double delta_X = (tick_2 - tick_1)/18.2148;
+
+   return sqrt(delta_P*delta_P + delta_X*delta_X);
+}
 
 }
 
