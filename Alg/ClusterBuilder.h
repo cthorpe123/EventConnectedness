@@ -10,9 +10,12 @@
 #include <TROOT.h>
 #include <TStyle.h>
 
-namespace Connectedness {
+#include "Shared.h"
 
-enum e_Planes{kPlane0,kPlane1,kPlane2};
+using std::vector;
+using std::string;
+
+namespace Connectedness {
 
 struct Cluster {
 
@@ -45,7 +48,7 @@ class ClusterBuilder {
 
       // Event processing functions
 
-      void ReadData(std::vector<int> channel,std::vector<int> tick,std::vector<double> signal,std::string rse="");
+      void ReadData(const std::vector<int>* channel,const std::vector<int>* tick,const std::vector<double>* signal,std::string rse="");
       void ReadData(TH2D* h_Activity,std::string rse="");
 
       // Returns the ID of the cluster (check this against list of existing cluster IDs to

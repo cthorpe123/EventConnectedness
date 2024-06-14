@@ -33,7 +33,6 @@ int TestPlane(Connectedness::ClusterBuilder* c,std::string rse,int plane,int muo
    std::pair<int,int> thisClusterIDSize;
    std::vector<int> ClusterIDs;
    std::vector<int> ClusterSizes;
-
    // Check the seeds are not separated by dead channels
    if(!deadwirefail){
 

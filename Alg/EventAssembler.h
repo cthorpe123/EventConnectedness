@@ -2,13 +2,18 @@
 #define _EventAssembler_h_
 
 #include <vector>
+#include <iostream>
 
 #include "TFile.h"
 #include "TTree.h"
 
+#include "Shared.h"
+
 using std::vector;
+using std::string;
 
 namespace Connectedness {
+
 
    struct Event {
 
@@ -16,42 +21,18 @@ namespace Connectedness {
       Int_t           run;
       Int_t           subrun;
       Int_t           event;
-      vector<int>     Wire_Channel_Plane0;
-      vector<int>     Wire_Tick_Plane0;
-      vector<double>  Wire_Signal_Plane0;
-      vector<int>     Wire_Channel_Plane1;
-      vector<int>     Wire_Tick_Plane1;
-      vector<double>  Wire_Signal_Plane1;
-      vector<int>     Wire_Channel_Plane2;
-      vector<int>     Wire_Tick_Plane2;
-      vector<double>  Wire_Signal_Plane2;
-      vector<int>     TrackStart_Channel_Plane0;
-      vector<int>     TrackStart_Time_Plane0;
-      vector<int>     TrackStart_Channel_Plane1;
-      vector<int>     TrackStart_Time_Plane1;
-      vector<int>     TrackStart_Channel_Plane2;
-      vector<int>     TrackStart_Time_Plane2;
-      vector<double>  TrackStart_X;
-      vector<double>  TrackStart_Y;
-      vector<double>  TrackStart_Z;
-      vector<double>  TrackDir_X;
-      vector<double>  TrackDir_Y;
-      vector<double>  TrackDir_Z;
-      vector<int>     CaloStart_Channel_Plane0;
-      vector<int>     CaloStart_Time_Plane0;
-      vector<double>  CaloStart_X_Plane0;
-      vector<double>  CaloStart_Y_Plane0;
-      vector<double>  CaloStart_Z_Plane0;
-      vector<int>     CaloStart_Channel_Plane1;
-      vector<int>     CaloStart_Time_Plane1;
-      vector<double>  CaloStart_X_Plane1;
-      vector<double>  CaloStart_Y_Plane1;
-      vector<double>  CaloStart_Z_Plane1;
-      vector<int>     CaloStart_Channel_Plane2;
-      vector<int>     CaloStart_Time_Plane2;
-      vector<double>  CaloStart_X_Plane2;
-      vector<double>  CaloStart_Y_Plane2;
-      vector<double>  CaloStart_Z_Plane2;
+      vector<vector<int>*>  Wire_Channel;
+      vector<vector<int>*>  Wire_Tick;
+      vector<vector<double>*>  Wire_Signal;
+      vector<int>*     TrackIndex;
+      vector<vector<int>*>     TrackStart_Channel;
+      vector<vector<int>*>     TrackStart_Time;
+      vector<double>  *TrackStart_X;
+      vector<double>  *TrackStart_Y;
+      vector<double>  *TrackStart_Z;
+      vector<double>  *TrackDir_X;
+      vector<double>  *TrackDir_Y;
+      vector<double>  *TrackDir_Z;
    };
 
    class EventAssembler {
@@ -76,42 +57,19 @@ namespace Connectedness {
          Int_t           run;
          Int_t           subrun;
          Int_t           event;
-         vector<int>     *Wire_Channel_Plane0=0;
-         vector<int>     *Wire_Tick_Plane0=0;
-         vector<double>  *Wire_Signal_Plane0=0;
-         vector<int>     *Wire_Channel_Plane1=0;
-         vector<int>     *Wire_Tick_Plane1=0;
-         vector<double>  *Wire_Signal_Plane1=0;
-         vector<int>     *Wire_Channel_Plane2=0;
-         vector<int>     *Wire_Tick_Plane2=0;
-         vector<double>  *Wire_Signal_Plane2=0;
-         vector<int>     *TrackStart_Channel_Plane0=0;
-         vector<int>     *TrackStart_Time_Plane0=0;
-         vector<int>     *TrackStart_Channel_Plane1=0;
-         vector<int>     *TrackStart_Time_Plane1=0;
-         vector<int>     *TrackStart_Channel_Plane2=0;
-         vector<int>     *TrackStart_Time_Plane2=0;
+         vector<vector<int>*>     Wire_Channel;
+         vector<vector<int>*>     Wire_Tick;
+         vector<vector<double>*>  Wire_Signal;
+         vector<int>*     TrackIndex=0;
+         vector<vector<int>*>     TrackStart_Channel;
+         vector<vector<int>*>     TrackStart_Time;
          vector<double>  *TrackStart_X=0;
          vector<double>  *TrackStart_Y=0;
          vector<double>  *TrackStart_Z=0;
          vector<double>  *TrackDir_X=0;
          vector<double>  *TrackDir_Y=0;
          vector<double>  *TrackDir_Z=0;
-         vector<int>     *CaloStart_Channel_Plane0=0;
-         vector<int>     *CaloStart_Time_Plane0=0;
-         vector<double>  *CaloStart_X_Plane0=0;
-         vector<double>  *CaloStart_Y_Plane0=0;
-         vector<double>  *CaloStart_Z_Plane0=0;
-         vector<int>     *CaloStart_Channel_Plane1=0;
-         vector<int>     *CaloStart_Time_Plane1=0;
-         vector<double>  *CaloStart_X_Plane1=0;
-         vector<double>  *CaloStart_Y_Plane1=0;
-         vector<double>  *CaloStart_Z_Plane1=0;
-         vector<int>     *CaloStart_Channel_Plane2=0;
-         vector<int>     *CaloStart_Time_Plane2=0;
-         vector<double>  *CaloStart_X_Plane2=0;
-         vector<double>  *CaloStart_Y_Plane2=0;
-         vector<double>  *CaloStart_Z_Plane2=0;
+
    };
 
 }

@@ -119,23 +119,27 @@ void ClusterBuilder::Reset(){
    if(h_Raw != nullptr) delete h_Raw;
    if(h_Binary != nullptr) delete h_Binary;
    if(h_Clustered != nullptr) delete h_Clustered;
+
+   h_Raw = nullptr;
+   h_Binary = nullptr;
+   h_Clustered = nullptr;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ClusterBuilder::ReadData(std::vector<int> channel,std::vector<int> tick,std::vector<double> signal,std::string rse){
+void ClusterBuilder::ReadData(const std::vector<int>* channel,const std::vector<int>* tick,const std::vector<double>* signal,std::string rse){
 
    // Channel, tick and signal vectors should all be of the same size
-   assert(channel.size() == tick.size() && tick.size() == signal.size());
+   assert(channel->size() == tick->size() && tick->size() == signal->size());
 
    int max_ch=-10000,min_ch=10000000;
    double max_t=-1e10,min_t=1e10;
 
-   for(size_t i=0;i<channel.size();i++){
-      if(channel.at(i) > max_ch) max_ch = channel.at(i);
-      if(tick.at(i) > max_t) max_t = tick.at(i);
-      if(channel.at(i) < min_ch) min_ch = channel.at(i);
-      if(tick.at(i) < min_t) min_t = tick.at(i);
+   for(size_t i=0;i<channel->size();i++){
+      if(channel->at(i) > max_ch) max_ch = channel->at(i);
+      if(tick->at(i) > max_t) max_t = tick->at(i);
+      if(channel->at(i) < min_ch) min_ch = channel->at(i);
+      if(tick->at(i) < min_t) min_t = tick->at(i);
    }
 
    int nchannels = max_ch - min_ch;
@@ -146,9 +150,9 @@ void ClusterBuilder::ReadData(std::vector<int> channel,std::vector<int> tick,std
    h_Binary = new TH2D(("h_Channel_vs_Tick_Binary_"+rse).c_str(),"Binary Activity;Channel;Tick",nchannels,min_ch,max_ch,nticks,min_t,max_t);
 
    // Fill the histograms
-   for(size_t i=0;i<channel.size();i++){
-      h_Raw->Fill(channel.at(i),tick.at(i),signal.at(i));
-      if(signal.at(i) > Threshold) h_Binary->Fill(channel.at(i),tick.at(i),1);
+   for(size_t i=0;i<channel->size();i++){
+      h_Raw->Fill(channel->at(i),tick->at(i),signal->at(i));
+      if(signal->at(i) > Threshold) h_Binary->Fill(channel->at(i),tick->at(i),1);
    }
 }
 
