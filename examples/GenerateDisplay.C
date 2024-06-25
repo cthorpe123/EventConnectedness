@@ -31,7 +31,7 @@ void GenerateDisplay(std::string infile,std::string intracklist,int runtodraw,in
   c.LoadDeadWireMaps("../DeadWireMaps/");
   c.SetThreshold(threshold);
   //c.SetGrowthArea(3);
-  
+
   Connectedness::EventAssembler E;
   E.SetFile(indir + infile);
 
@@ -52,12 +52,30 @@ void GenerateDisplay(std::string infile,std::string intracklist,int runtodraw,in
     if(debug) std::cout << "Muon=" << indexes.at(0) << "  DecayProton=" << indexes.at(1) << "  DecayPion=" << indexes.at(2) << std::endl;
 
     std::string rse = "run_"  + std::to_string(e.run) + "_subrun_"  + std::to_string(e.subrun) + "_event_"  + std::to_string(e.event);
-    
+
     for(int i_pl=0;i_pl<Connectedness::kMAXPlane;i_pl++){
 
-      int muon_seed_channel = e.TrackStart_Channel.at(i_pl)->at(indexes.at(0)), muon_seed_time = e.TrackStart_Time.at(i_pl)->at(indexes.at(0)); 
-      int proton_seed_channel = e.TrackStart_Channel.at(i_pl)->at(indexes.at(1)), proton_seed_time = e.TrackStart_Time.at(i_pl)->at(indexes.at(1)); 
-      int pion_seed_channel = e.TrackStart_Channel.at(i_pl)->at(indexes.at(2)), pion_seed_time = e.TrackStart_Time.at(i_pl)->at(indexes.at(2)); 
+      int muon_seed_channel=-1,muon_seed_time=-1;
+      int proton_seed_channel=-1,proton_seed_time=-1;
+      int pion_seed_channel=-1,pion_seed_time=-1;
+
+      for(size_t i_tr=0;i_tr<e.TrackIndex->size();i_tr++){
+        if(e.TrackIndex->at(i_tr) == indexes.at(0)){
+          muon_seed_channel = e.TrackStart_Channel.at(i_pl)->at(i_tr); 
+          muon_seed_time = e.TrackStart_Time.at(i_pl)->at(i_tr); 
+        }
+        if(e.TrackIndex->at(i_tr) == indexes.at(1)){
+          proton_seed_channel = e.TrackStart_Channel.at(i_pl)->at(i_tr); 
+          proton_seed_time = e.TrackStart_Time.at(i_pl)->at(i_tr); 
+        }
+        if(e.TrackIndex->at(i_tr) == indexes.at(2)){
+          pion_seed_channel = e.TrackStart_Channel.at(i_pl)->at(i_tr); 
+          pion_seed_time = e.TrackStart_Time.at(i_pl)->at(i_tr); 
+        }
+      }
+
+      if(muon_seed_channel == -1 || proton_seed_channel == -1 || pion_seed_channel == -1)
+        throw std::invalid_argument("Track indexes for muon proton or pion not found in wire tree");
 
       c.ReadData(e.Wire_Channel.at(i_pl),e.Wire_Tick.at(i_pl),e.Wire_Signal.at(i_pl),rse);
       TestPlane(&c,rse,i_pl,muon_seed_channel,muon_seed_time,proton_seed_channel,proton_seed_time,pion_seed_channel,pion_seed_time,minsize,true);
